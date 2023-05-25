@@ -1,6 +1,7 @@
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
+const randomUseragent = require('random-useragent');
 
 const logger = require('morgan')
 const express = require('express');
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 async function getCoockies() {
+  const randomHeaders = randomUseragent.getRandomData()
   const response = await fetch('https://sib.fm/promocat')
   const page = await response.text()
 
@@ -28,12 +30,12 @@ async function getCoockies() {
   const xsr = coockies.match(/XSRF-TOKEN=.*?(?=;)/)[0]
   const laravel = coockies.match(/laravel_session=.*?(?=;)/)[0]
   const myCoockies = `${xsr}; ${laravel}`
-  return [token, myCoockies]
+  return [randomHeaders, token, myCoockies]
 }
 
 const diaposon = {
   // Секунды
-  ot: 1,
+  ot: 2,
   do: 10
 }
 
@@ -45,22 +47,24 @@ async function start(count = 10) {
     const result = await Like()
     console.log("▶ ⇛ result:", result);
   }
+  return `All Done`
 }
 
 
 async function Like() {
   try {
-    const [token, coockies] = await getCoockies()
+    // формируем headers
+    const [randomHeaders, token, coockies] = await getCoockies()
+    randomHeaders.Cookie = coockies
+    randomHeaders['Content-Type'] = 'application/json'
+
     const response = await fetch('https://sib.fm/promocat/like', {
       method: 'POST',
       credentials: 'include', // Включаем передачу кук
-      headers: {
-        'Cookie': coockies,
-        'Content-Type': 'application/json',
-      },
+      headers: randomHeaders,
       body: JSON.stringify({
         _token: token,
-        id: '505'
+        id: '1652'
       }),
       redirect: 'follow'
     });
@@ -77,9 +81,4 @@ async function Like() {
 }
 
 
-start()
-
-
-// app.listen(3001, () => {
-//   console.log('Сервер запущен!!');
-// });
+export default start;
